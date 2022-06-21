@@ -2,11 +2,12 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import permissions
 from django.db.models import F
+from rest_framework import status
 
 # 로그인 및 로그아웃에 사용
 from django.contrib.auth import login, authenticate, logout
 
-from .serializers import UserSerializer, UserSignupSerializer
+from .serializers import UserSerializer
 
 from .models import User as UserModel
 from .models import UserProfile as UserProfileModel
@@ -26,7 +27,7 @@ class UserView(APIView):
         # return Response(UserSerializer(all_user, many=True).data)
         user_serializer = UserSerializer(request.user, context={"request": request}).data
         return Response(user_serializer)
-
+        
         # print(dir(user))
         # return Response({})
         
@@ -59,18 +60,35 @@ class UserView(APIView):
     
     # 회원가입
     def post(self, request):
-        serializer = UserSignupSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({"msg": "signup success!!" })
-        else:
-            print(serializer.errors)
-            return Response({"msg": "signup fail!!" })
+        user_serializer = UserSerializer(data=request.data, context={"request": request})
+        
+        if user_serializer.is_valid():
+            user_serializer.save()
+            return Response(user_serializer.data, status=status.HTTP_200_OK)
+        
+        return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        # serializer = UserSignupSerializer(data=request.data)
+        # if serializer.is_valid():
+        #     serializer.save()
+        #     return Response({"msg": "signup success!!" })
+        # else:
+        #     print(serializer.errors)
+        #     return Response({"msg": "signup fail!!" })
        
     
     # 회원 정보 수정
-    def put(self, request):
-        return Response({"msg": "put method!!" })
+    def put(self, request, obj_id):
+        # user = request.user
+        target_user = UserModel.objects.get(id=obj_id)
+        # fields에 있는 데이터를 다 넣을 필요가 없도록 하기 위해 partial=True 사용
+        user_serializer = UserSerializer(target_user, data=request.data, partial=True, context={"request": request})
+        
+        if user_serializer.is_valid():
+            user_serializer.save()
+            return Response(user_serializer.data, status=status.HTTP_200_OK)
+        
+        return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     # 회원 탈퇴
     def delete(self, request):

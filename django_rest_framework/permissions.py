@@ -35,7 +35,7 @@ class IsAdminOrIsAuthenticated(BasePermission):
     """
     admin 사용자는 모두 가능, 로그인 사용자는 조회는 가능하지만 게시글 작성은 일주일이 지나야 가능
     """
-    SAFE_METHODS = ('POST', )
+    SAFE_METHODS = ('POST', 'PUT')
     message = '접근 권한이 없습니다.'
 
     def has_permission(self, request, view):
@@ -56,8 +56,8 @@ class IsAdminOrIsAuthenticated(BasePermission):
         
         # 유저가 인증되어있고, 가입한지 일주일이 넘었다면 트루(어드민 아닌 사람들)
         if user.is_authenticated and request.method in self.SAFE_METHODS:
-            print(bool(user.join_data < timezone.now() - timedelta(days=7)))
-            return bool(user.join_data < timezone.now() - timedelta(days=7))
+            print(bool(user.join_data < timezone.now() - timedelta(minutes=7)))
+            return bool(user.join_data < timezone.now() - timedelta(minutes=7))
 
         return False
     
