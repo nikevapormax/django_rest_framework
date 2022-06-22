@@ -5,7 +5,7 @@ from .models import UserProfile as UserProfileModel
 from .models import Hobby as HobbyModel
 
 from blog.serializers import ArticleSerializer, CommentSerializer
-from product.serializers import ProductSerializer
+from product.serializers import ProductSerializer, ReviewSerializer
 # class UserSignupSerializer(serializers.ModelSerializer):
 #     def create(self, *args, **kwargs):
 #         user = super().create(*args, **kwargs)
@@ -39,7 +39,6 @@ class HobbySerializer(serializers.ModelSerializer):
     
         # 위의 for문을 리스트 컴프리헨션을 통해 줄일 수 있음!
         # return [user_profile.user.username for user_profile in obj.userprofile_set.all()]
-    
     class Meta:
         model = HobbyModel
         fields = ["name", "same_hobby_user"]
@@ -58,7 +57,7 @@ class UserSerializer(serializers.ModelSerializer):
     articles = ArticleSerializer(many=True, source="article_set", read_only=True)
     comments = CommentSerializer(many=True, source="comment_set", read_only=True)
     products = ProductSerializer(many=True, source="product_set", read_only=True)
-    
+    reviews = ReviewSerializer(many=True, source="review_set", read_only=True)
     # custom validator
     # 기존의 validator와 같이 쓰임
     def validate(self, data):
@@ -104,13 +103,12 @@ class UserSerializer(serializers.ModelSerializer):
         
         return instance
         
-        
-        
     class Meta:
         # 내가 serializer에서 어떤 모델을 쓰겠다는 것을 선언하는 것!(중요)
         model = UserModel
         # join_data 같은 경우는 시스템에서 자동으로 등록해주는 것으로 기본적으로 read_only임
-        fields = ["username", "password", "email", "name", "join_data", "user_detail", "articles", "comments", "products"]
+        fields = ["username", "password", "email", "name", "join_data", 
+                  "user_detail", "articles", "comments", "products", "reviews"]
         
         extra_kwargs = {
             # write_only : 해당 필드를 쓰기 전용으로 만들어 준다.

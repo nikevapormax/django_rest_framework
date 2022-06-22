@@ -161,3 +161,5 @@ REST_FRAMEWORK = {
 #         },
 #     }
 # }
+MEDIA_URL = "/thumb/"
+MEDIA_ROOT = os.path.join(BASE_DIR, 'thumb')

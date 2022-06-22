@@ -6,25 +6,38 @@ from datetime import datetime
 from .serializers import ProductSerializer
 
 from .models import Product as ProductModel
-from django_rest_framework.permissions import IsAdminOrIsAuthenticated
+from .models import Review as ReviewModel
+from django_rest_framework.permissions import IsAuthenticatedPostAfterThreeDays
 from django.db.models import Q
 
-
 class ProductView(APIView):
-    permission_classes = [IsAdminOrIsAuthenticated]
+    permission_classes = [IsAuthenticatedPostAfterThreeDays]
     
     # product 조회
     def get(self, request):
+        # return Response({})
         
         today = datetime.now()
-        products = ProductModel.objects.filter(Q(exposure_start__lte=today, exposure_end__gte=today) | 
+        products = ProductModel.objects.filter(Q(exposure_end__gte=today) & 
+                                               Q(activate = True) |
                                                Q(user=request.user))
         
-        return Response(ProductSerializer(products, many=True).data, status=status.HTTP_200_OK)
+        product_serializer = ProductSerializer(products, many=True)
+   
+        return Response(product_serializer.data, status=status.HTTP_200_OK)
     
     # product 생성
     def post(self, request):
-        request.data["user"] = request.user.id
+        # data = request.data.copy()
+        # # request.data._mutable=True
+        # data["user"] = request.user.id
+        # print(data['user'])
+        # print(data)
+        
+        user = request.user
+        request.data["user"] = user.id
+        print(request.data)
+
         product_serializer = ProductSerializer(data=request.data, context={"request": request})
         
         if product_serializer.is_valid(): 

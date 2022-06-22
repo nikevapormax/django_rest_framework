@@ -19,7 +19,7 @@ class ArticleView(APIView):
         # articles = ArticleModel.objects.filter(author=user)
         
         today = datetime.now()
-        time = ArticleModel.objects.filter(exposure_start__lte=today, exposure_end__gte=today).order_by("-exposure_start")
+        time = ArticleModel.objects.filter(exposure_start__lte=today, exposure_end__gte=today).order_by("-id")
         # if time:
         #     show_article = [f'{article.title} : {article.content}' for article in time]
 
