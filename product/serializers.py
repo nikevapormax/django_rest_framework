@@ -1,17 +1,71 @@
-from django.forms import modelformset_factory
 from rest_framework import serializers
 
-from .models import Product as ProductModel
-from user.models import User as UserModel
+from datetime import datetime
 
+from .models import Product as ProductModel, Review
+from .models import Review as ReviewModel
+
+class ReviewSerializer(serializers.ModelSerializer):
+   
+    class Meta:
+        model = ReviewModel
+        fields = ["content", "rate"]
+        
 class ProductSerializer(serializers.ModelSerializer):
-    # user = serializers.SerializerMethodField()
-    # def get_user(self, obj):
-    #     print(obj)
-    #     user = self.context["request"].user
-    #     return user.username
-    
+    reviews = ReviewSerializer(many=True, read_only=True, source='review_set')
+
     class Meta:
         model = ProductModel
-        fields = ["user", "title", "thumbnail", "desc", "exposure_start", "exposure_end"]
+        fields = ["user", "title", "thumbnail", "desc", "created_at", "exposure_start",
+                  "exposure_end", "price", "updated_at", "activate", "reviews"]
         
+        read_only_fields = ["created_at", "updated_at"]
+    
+    # 노출 종료 일자가 현재보다 더 이전 시점이라면 상품을 등록할 수 없도록
+    def validate(self, data):
+        print(1, data)
+        today = datetime.now().date()
+        
+        if today > data["exposure_end"]:
+            raise serializers.ValidationError(
+                detail={"error": "노출 종료 일자가 너무 이릅니다."}
+            )
+        return data
+    
+    # 상품 설명의 마지막에 "<등록 일자>에 등록된 상품입니다." 라는 문구를 추가
+    def create(self, validated_data):
+        desc = validated_data.pop("desc")
+        product = ProductModel(**validated_data)
+        product.save()
+        
+        create_time = product.created_at
+        new_desc = f'{desc} {create_time.date()}에 등록된 상품입니다.'
+
+        product_change = ProductModel.objects.get(id=product.id)
+        product_change.desc = new_desc
+        product_change.save()
+      
+        return product_change
+    
+    # update 됐을 때 상품 설명의 가장 첫줄에 "<수정 일자>에 수정되었습니다." 라는 문구를 추가
+    # 수정할 때마다 문구가 붙는 문제 고쳐야함
+    def update(self, instance, validated_data):
+        # instance에는 입력된 object가 담긴다.
+        desc = validated_data.pop("desc")
+    
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+        
+        new_desc = f'{instance.updated_at.date()}에 수정되었습니다. {desc}'
+        instance.desc = new_desc
+        instance.save()
+        
+        return instance
+    
+    
+
+    
+    
+    
+    
