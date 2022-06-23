@@ -12,12 +12,37 @@ class ReviewSerializer(serializers.ModelSerializer):
         fields = ["content", "rate"]
         
 class ProductSerializer(serializers.ModelSerializer):
-    reviews = ReviewSerializer(many=True, read_only=True, source='review_set')
-
+    last_review = serializers.SerializerMethodField()
+    avg_rate = serializers.SerializerMethodField()
+        
+    def get_last_review(self, obj):
+        review_list = []
+        
+        for reviews in obj.review_set.all():
+            if reviews.content:
+                review_list.append(reviews.content)
+        
+        if len(review_list) != 0:
+            return review_list[-1]
+        
+        return ""
+        
+    def get_avg_rate(self,obj):
+        review_list = []
+        
+        for reviews in obj.review_set.all():
+            if reviews.content:
+                review_list.append(reviews.rate)
+        
+        if len(review_list) != 0:
+            return sum(review_list) / len(review_list)
+        
+        return 0
+    
     class Meta:
         model = ProductModel
         fields = ["user", "title", "thumbnail", "desc", "created_at", "exposure_start",
-                  "exposure_end", "price", "updated_at", "activate", "reviews"]
+                  "exposure_end", "price", "updated_at", "activate", "last_review", "avg_rate"]
         
         read_only_fields = ["created_at", "updated_at"]
     
